@@ -1,0 +1,231 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String    @id @default(cuid())
+  email            String    @unique
+  password         String
+  name             String
+  company          String?
+  phone            String?
+  address          String?
+  city             String?
+  country          String?
+  taxId            String?
+  currency         String    @default("USD")
+  timezone         String    @default("UTC")
+  isEmailVerified  Boolean   @default(false)
+  isActive         Boolean   @default(true)
+  refreshToken     String?   @db.Text
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  customers     Customer[]
+  invoices      Invoice[]
+  payments      Payment[]
+  subscriptions Subscription[]
+  auditLogs     AuditLog[]
+
+  @@map("users")
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  userId    String
+  email     String
+  name      String
+  company   String?
+  phone     String?
+  address   String?
+  city      String?
+  state     String?
+  country   String?
+  zipCode   String?
+  taxId     String?
+  notes     String?  @db.Text
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invoices Invoice[]
+  payments Payment[]
+
+  @@unique([userId, email])
+  @@map("customers")
+}
+
+model Invoice {
+  id            String        @id @default(cuid())
+  invoiceNumber String        @unique
+  userId        String
+  customerId    String
+  status        InvoiceStatus @default(DRAFT)
+  issueDate     DateTime      @default(now())
+  dueDate       DateTime
+  subtotal      Decimal       @db.Decimal(15, 2)
+  taxAmount     Decimal       @default(0) @db.Decimal(15, 2)
+  discountAmount Decimal      @default(0) @db.Decimal(15, 2)
+  totalAmount   Decimal       @db.Decimal(15, 2)
+  currency      String        @default("USD")
+  notes         String?       @db.Text
+  terms         String?       @db.Text
+  sentAt        DateTime?
+  paidAt        DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  customer  Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  items     InvoiceItem[]
+  payments  Payment[]
+
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id          String  @id @default(cuid())
+  invoiceId   String
+  description String
+  quantity    Decimal @db.Decimal(10, 2)
+  unitPrice   Decimal @db.Decimal(15, 2)
+  taxRate     Decimal @default(0) @db.Decimal(5, 2)
+  amount      Decimal @db.Decimal(15, 2)
+  sortOrder   Int     @default(0)
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@map("invoice_items")
+}
+
+model Payment {
+  id              String        @id @default(cuid())
+  invoiceId       String
+  userId          String
+  customerId      String
+  amount          Decimal       @db.Decimal(15, 2)
+  currency        String        @default("USD")
+  paymentMethod   PaymentMethod @default(STRIPE)
+  status          PaymentStatus @default(PENDING)
+  transactionId   String        @unique
+  gatewayResponse String?       @db.LongText
+  stripePaymentId String?       @unique
+  razorpayOrderId String?
+  razorpayPaymentId String?
+  notes           String?       @db.Text
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  invoice  Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model Subscription {
+  id              String             @id @default(cuid())
+  userId          String
+  customerId      String
+  planName        String
+  description     String?
+  amount          Decimal            @db.Decimal(15, 2)
+  currency        String             @default("USD")
+  billingCycle    BillingCycle       @default(MONTHLY)
+  status          SubscriptionStatus @default(ACTIVE)
+  stripeSubId     String?            @unique
+  razorpaySubId   String?            @unique
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd  Boolean         @default(false)
+  cancelledAt     DateTime?
+  trialEndsAt     DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+model TaxTemplate {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  description String?
+  rate        Decimal  @db.Decimal(5, 2)
+  country     String?
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("tax_templates")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String
+  action     String
+  entity     String
+  entityId   String
+  oldValues  String?  @db.LongText
+  newValues  String?  @db.LongText
+  ipAddress  String?
+  userAgent  String?  @db.Text
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("audit_logs")
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  VIEWED
+  PAID
+  PARTIAL
+  OVERDUE
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum PaymentMethod {
+  STRIPE
+  RAZORPAY
+  PAYPAL
+  BANK_TRANSFER
+  CASH
+  CHEQUE
+}
+
+enum BillingCycle {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAUSED
+  CANCELLED
+  PAST_DUE
+  TRIALING
+}
