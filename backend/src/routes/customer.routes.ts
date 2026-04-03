@@ -1,0 +1,21 @@
+import { Router } from 'express';
+import {
+  getCustomers,
+  getCustomer,
+  createCustomer,
+  updateCustomer,
+  deleteCustomer,
+} from '../controllers/customer.controller';
+import { authenticate } from '../middleware/auth';
+
+const router = Router();
+
+router.use(authenticate);
+
+router.get('/', getCustomers);
+router.get('/:id', getCustomer);
+router.post('/', createCustomer);
+router.put('/:id', updateCustomer);
+router.delete('/:id', deleteCustomer);
+
+export default router;
