@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function CustomersPage() {
   return (
     <div>
@@ -6,9 +8,9 @@ export default function CustomersPage() {
           <h1 className="text-2xl font-bold text-gray-900">Customers</h1>
           <p className="text-gray-600 mt-1">Manage your customer database</p>
         </div>
-        <a href="/customers/new" className="btn-primary">
+        <Link href="/customers/new" className="btn-primary">
           + Add Customer
-        </a>
+        </Link>
       </div>
 
       <div className="card">
@@ -20,9 +22,9 @@ export default function CustomersPage() {
           <p className="text-gray-500 mb-4">
             Add your first customer to start sending invoices
           </p>
-          <a href="/customers/new" className="btn-primary">
+          <Link href="/customers/new" className="btn-primary">
             Add Customer
-          </a>
+          </Link>
         </div>
       </div>
     </div>

@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function InvoicesPage() {
   return (
     <div>
@@ -6,12 +8,9 @@ export default function InvoicesPage() {
           <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
           <p className="text-gray-600 mt-1">Manage all your invoices</p>
         </div>
-        <a
-          href="/invoices/new"
-          className="btn-primary"
-        >
+        <Link href="/invoices/new" className="btn-primary">
           + Create Invoice
-        </a>
+        </Link>
       </div>
 
       <div className="card">
@@ -23,9 +22,9 @@ export default function InvoicesPage() {
           <p className="text-gray-500 mb-4">
             Create your first invoice to get started
           </p>
-          <a href="/invoices/new" className="btn-primary">
+          <Link href="/invoices/new" className="btn-primary">
             Create Invoice
-          </a>
+          </Link>
         </div>
       </div>
     </div>

@@ -1,7 +1,14 @@
-import { Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../config/database';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { generateTransactionId } from '../utils/helpers';
+
+interface StripeWebhookRequest extends Request {
+  body: Buffer;
+  headers: Request['headers'] & {
+    'stripe-signature'?: string;
+  };
+}
 
 export async function getPayments(
   req: AuthenticatedRequest,
@@ -98,7 +105,7 @@ export async function createStripePaymentIntent(
 }
 
 export async function handleStripeWebhook(
-  req: Request,
+  req: StripeWebhookRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> {
@@ -106,7 +113,7 @@ export async function handleStripeWebhook(
     const { getStripeClient } = await import('../config/stripe');
     const stripe = getStripeClient();
 
-    const sig = (req as unknown as { headers: Record<string, string> }).headers['stripe-signature'];
+    const sig = req.headers['stripe-signature'];
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
     if (!webhookSecret || !sig) {
@@ -115,7 +122,7 @@ export async function handleStripeWebhook(
     }
 
     const event = stripe.webhooks.constructEvent(
-      (req as unknown as { body: Buffer }).body,
+      req.body,
       sig,
       webhookSecret
     );

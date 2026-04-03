@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router } from 'express';
 import {
   getPayments,
   createStripePaymentIntent,
@@ -10,11 +10,7 @@ import { authenticate } from '../middleware/auth';
 const router = Router();
 
 // Stripe webhook requires raw body - must be before json parsing
-router.post(
-  '/webhook/stripe',
-  (req: Request, res: Response, next: NextFunction) =>
-    handleStripeWebhook(req, res, next)
-);
+router.post('/webhook/stripe', handleStripeWebhook);
 
 router.use(authenticate);
 
